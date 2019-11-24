@@ -4,6 +4,28 @@ mod serialization;
 use serde::{Serialize};
 
 
+type Channel = u16;
+
+
+type PayloadSize = u32;
+
+
+struct FrameProperties {
+    channel: Channel,
+    payload_size: PayloadSize,
+}
+
+
+impl FrameProperties {
+    fn new(channel: Channel, payload_size: PayloadSize) -> Self {
+        FrameProperties {
+            channel,
+            payload_size,
+        }
+    }
+}
+
+
 #[derive(Serialize)]
 struct ProtocolVersion(char, char, char);
 

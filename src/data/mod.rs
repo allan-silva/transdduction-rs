@@ -4,10 +4,46 @@ mod serialization;
 use serde::{Serialize};
 
 
-type Channel = u16;
+type ShortUInt = u16;
 
 
-type PayloadSize = u32;
+type LongUInt = u32;
+
+
+type LongLongUInt = u64;
+
+
+type Timestamp = LongLongUInt;
+
+
+type Boolean = u8;
+
+
+type ShortShortUInt = u8;
+
+
+type ShortShortInt = i8;
+
+
+type ShortInt = i16;
+
+
+type LongInt = i32;
+
+
+type LongLongInt = i64;
+
+
+type Float = f32;
+
+
+type Double = f64;
+
+
+type Channel = ShortUInt;
+
+
+type PayloadSize = LongLongUInt;
 
 
 struct FrameProperties {

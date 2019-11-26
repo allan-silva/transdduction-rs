@@ -4,6 +4,7 @@ use serde::ser::SerializeStruct;
 use super::{
     ProtocolHeader,
     FrameProperties,
+    DecimalValue,
 };
 
 
@@ -30,5 +31,18 @@ impl Serialize for FrameProperties {
         fp.serialize_field("channel", &self.channel)?;
         fp.serialize_field("payload_size", &self.payload_size)?;
         fp.end()
+    }
+}
+
+
+impl Serialize for DecimalValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer
+    {
+        let mut dv = serializer.serialize_struct("DecimalValue", 2)?;
+        dv.serialize_field("scale", &self.scale)?;
+        dv.serialize_field("value", &self.value)?;
+        dv.end()
     }
 }

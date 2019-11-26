@@ -43,7 +43,26 @@ type Double = f64;
 type Channel = ShortUInt;
 
 
-type PayloadSize = LongLongUInt;
+type Scale = u8;
+
+
+type PayloadSize = LongUInt;
+
+
+struct DecimalValue {
+    scale: Scale,
+    value: LongUInt,
+}
+
+
+impl DecimalValue {
+    fn new(scale: Scale, value: LongUInt) -> Self {
+        DecimalValue {
+            scale,
+            value,
+        }
+    }
+}
 
 
 struct FrameProperties {

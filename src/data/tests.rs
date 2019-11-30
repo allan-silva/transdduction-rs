@@ -2,10 +2,13 @@ use bincode;
 
 use std::mem;
 
-use super::{Channel, DecimalValue, FrameProperties, LongUInt, PayloadSize, ProtocolHeader, Scale};
+use super::{
+    Channel, DecimalValue, FrameProperties, LongUInt, PayloadSize, ProtocolHeader, Scale,
+    ShortString, StringChar,
+};
 
 fn assert_len<T>(v: &Vec<T>, size: usize) {
-    assert_eq!(size, v.len());
+    assert_eq!(v.len(), size);
 }
 
 fn get_byte_array<T>(v: usize) -> Vec<u8> {
@@ -81,4 +84,29 @@ fn test_decimal_value_serialization() {
     let value_bytes = get_byte_array::<LongUInt>(decimal_value.value as usize);
 
     assert_vec_data(&value_bytes, &serialized_dv[1..]);
+}
+
+#[test]
+fn test_short_string_serialization() {
+    let s = "Li";
+    let short_str = ShortString::new(s.len() as u8, &s).unwrap();
+    let serialized_short_string = bincode::serialize(&short_str).unwrap();
+
+    let mem_size = 1 + short_str.content.len();
+
+    assert_len(&serialized_short_string, mem_size);
+
+    let length_bytes = get_byte_array::<u8>(short_str.length as usize);
+    assert_vec_data(&length_bytes, &serialized_short_string[..1]);
+
+    assert_vec_data(short_str.content.as_bytes(), &serialized_short_string[1..]);
+}
+
+#[test]
+fn test_short_string_serialization_fail() {
+    let s = "Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe";
+    assert_eq!(
+        ShortString::new(s.len() as u8, &s).unwrap_err(),
+        "Invalid content size"
+    );
 }

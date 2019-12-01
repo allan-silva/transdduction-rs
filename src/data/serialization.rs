@@ -6,8 +6,8 @@ use serde::ser::SerializeStruct;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use super::{
-    AmqpField, DecimalValue, FieldValue, FrameProperties, LongString, LongUInt, ProtocolHeader,
-    ShortString,
+    AmqpField, DecimalValue, Field, FieldArray, FieldTable, FieldValue, FrameProperties,
+    LongString, LongUInt, ProtocolHeader, ShortString,
 };
 
 fn write_field_bytes<S>(serialize_struct: &mut S, name: &'static str, v: &[u8])
@@ -133,6 +133,7 @@ impl<'a> Serialize for FieldValue<'a> {
         S: Serializer,
     {
         let amqp_field_bytes = bincode::serialize(&self.value).unwrap();
+
         let mut fv = serializer.serialize_struct(
             "FieldValue",
             mem::size_of_val(&self.id) + amqp_field_bytes.len(),
@@ -143,5 +144,78 @@ impl<'a> Serialize for FieldValue<'a> {
         write_field_bytes(&mut fv, "value", &amqp_field_bytes);
 
         fv.end()
+    }
+}
+
+impl<'a> Serialize for Field<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let name_bytes = bincode::serialize(&self.name).unwrap();
+        let field_value_bytes = bincode::serialize(&self.value).unwrap();
+        let mut field =
+            serializer.serialize_struct("Field", name_bytes.len() + field_value_bytes.len())?;
+
+        write_field_bytes(&mut field, "name", &name_bytes);
+        write_field_bytes(&mut field, "value", &field_value_bytes);
+
+        field.end()
+    }
+}
+
+impl<'a> Serialize for FieldTable<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let serialized_fields: Vec<Vec<u8>> = self
+            .fields
+            .iter()
+            .map(|field| bincode::serialize(field).unwrap())
+            .collect();
+
+        let fields_bytes_size: usize = serialized_fields.iter().map(|field| field.len()).sum();
+
+        let mut ft = serializer.serialize_struct(
+            "FieldTable",
+            mem::size_of_val(&self.size()) + fields_bytes_size,
+        )?;
+
+        ft.serialize_field("size", &self.size())?;
+
+        for serialized_field in serialized_fields {
+            write_field_bytes(&mut ft, "fields", &serialized_field)
+        }
+
+        ft.end()
+    }
+}
+
+impl<'a> Serialize for FieldArray<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let serialized_fields: Vec<Vec<u8>> = self
+            .values
+            .iter()
+            .map(|field| bincode::serialize(field).unwrap())
+            .collect();
+
+        let fields_bytes_size: usize = serialized_fields.iter().map(|field| field.len()).sum();
+
+        let mut ft = serializer.serialize_struct(
+            "FieldArray",
+            mem::size_of_val(&self.size()) + fields_bytes_size,
+        )?;
+
+        ft.serialize_field("size", &self.size())?;
+
+        for serialized_field in serialized_fields {
+            write_field_bytes(&mut ft, "fields", &serialized_field)
+        }
+
+        ft.end()
     }
 }

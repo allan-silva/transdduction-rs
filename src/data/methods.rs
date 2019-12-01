@@ -1,8 +1,8 @@
 use super::{
-    AmqpField, AmqpLiteral, Boolean, Channel, DecimalValue, Double, FieldArray, FieldTable,
-    FieldValue, Float, FrameProperties, LongInt, LongLongInt, LongLongUInt, LongString, LongUInt,
-    PayloadSize, ProtocolHeader, ProtocolVersion, Scale, ShortInt, ShortShortInt, ShortShortUInt,
-    ShortString, ShortUInt, Timestamp,
+    AmqpField, AmqpLiteral, Boolean, Channel, DecimalValue, Double, Field, FieldArray, FieldName,
+    FieldTable, FieldValue, Float, FrameProperties, LongInt, LongLongInt, LongLongUInt, LongString,
+    LongUInt, PayloadSize, ProtocolHeader, ProtocolVersion, Scale, ShortInt, ShortShortInt,
+    ShortShortUInt, ShortString, ShortUInt, Timestamp,
 };
 
 impl DecimalValue {
@@ -154,5 +154,31 @@ impl From<ShortInt> for FieldValue<'_> {
 impl From<ShortShortInt> for FieldValue<'_> {
     fn from(value: ShortShortInt) -> Self {
         FieldValue::new('b', AmqpField::ShortShortInt(value))
+    }
+}
+
+impl<'a> Field<'a> {
+    pub fn new(name: &'static FieldName, value: FieldValue<'a>) -> Self {
+        Field { name, value }
+    }
+}
+
+impl<'a> FieldTable<'a> {
+    pub fn size(&self) -> LongUInt {
+        self.fields.len() as LongUInt
+    }
+
+    pub fn new() -> Self {
+        FieldTable { fields: Vec::new() }
+    }
+}
+
+impl<'a> FieldArray<'a> {
+    pub fn size(&self) -> LongUInt {
+        self.values.len() as LongUInt
+    }
+
+    pub fn new() -> Self {
+        FieldArray { values: Vec::new() }
     }
 }

@@ -106,20 +106,15 @@ struct FieldValue<'a> {
     value: AmqpField<'a>,
 }
 
-#[derive(Serialize)]
 struct Field<'a> {
-    name: FieldName<'a>,
+    name: &'a FieldName<'a>,
     value: FieldValue<'a>,
 }
 
-#[derive(Serialize)]
 struct FieldTable<'a> {
-    size: LongUInt,
     fields: Vec<Field<'a>>,
 }
 
-#[derive(Serialize)]
 struct FieldArray<'a> {
-    size: LongUInt,
     values: Vec<FieldValue<'a>>,
 }

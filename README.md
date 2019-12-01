@@ -1,2 +1,2 @@
 # transdduction-rs
-Rust AMQP client
+Rust AMQP client implementation for study purposes.

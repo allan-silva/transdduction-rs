@@ -1,10 +1,25 @@
 use std::mem;
 
+use bincode;
 use serde;
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use super::{DecimalValue, FrameProperties, LongString, LongUInt, ProtocolHeader, ShortString};
+use super::{
+    AmqpField, DecimalValue, FieldValue, FrameProperties, LongString, LongUInt, ProtocolHeader,
+    ShortString,
+};
+
+fn write_field_bytes<S>(serialize_struct: &mut S, name: &'static str, v: &[u8])
+where
+    S: SerializeStruct,
+{
+    for b in v {
+        serialize_struct
+            .serialize_field(name, &b)
+            .expect("Error on serialize bytes field");
+    }
+}
 
 impl Serialize for ProtocolHeader {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -53,9 +68,8 @@ impl<'a> Serialize for ShortString<'a> {
             mem::size_of_val(&self.length) + self.length as usize,
         )?;
         ss.serialize_field("length", &self.length)?;
-        for b in self.content.as_bytes() {
-            ss.serialize_field("content", &b)?;
-        }
+
+        write_field_bytes(&mut ss, "content", &self.content.as_bytes());
 
         ss.end()
     }
@@ -71,10 +85,63 @@ impl<'a> Serialize for LongString<'a> {
             mem::size_of_val(&self.length) + self.length as usize,
         )?;
         ls.serialize_field("length", &self.length)?;
-        for b in self.content.as_bytes() {
-            ls.serialize_field("content", &b)?;
-        }
+
+        write_field_bytes(&mut ls, "content", &self.content.as_bytes());
 
         ls.end()
+    }
+}
+
+impl<'a> Serialize for AmqpField<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let value_bytes = match self {
+            AmqpField::Bit(value) => bincode::serialize(value).unwrap(),
+            AmqpField::Octect(value) => bincode::serialize(value).unwrap(),
+            AmqpField::ShortUInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::LongUInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::LongLongUInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::ShortString(value) => bincode::serialize(value).unwrap(),
+            AmqpField::LongString(value) => bincode::serialize(value).unwrap(),
+            AmqpField::Timestamp(value) => bincode::serialize(value).unwrap(),
+            AmqpField::FieldTable(value) => bincode::serialize(value).unwrap(),
+
+            AmqpField::Boolean(value) => bincode::serialize(value).unwrap(),
+            AmqpField::ShortShortInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::ShortShortUInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::ShortInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::LongInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::LongLongInt(value) => bincode::serialize(value).unwrap(),
+            AmqpField::Float(value) => bincode::serialize(value).unwrap(),
+            AmqpField::Double(value) => bincode::serialize(value).unwrap(),
+            AmqpField::DecimalValue(value) => bincode::serialize(value).unwrap(),
+            AmqpField::FieldArray(value) => bincode::serialize(value).unwrap(),
+        };
+
+        let mut af = serializer.serialize_struct("AmqpField", value_bytes.len())?;
+        write_field_bytes(&mut af, "AmqpField.0", &value_bytes);
+
+        af.end()
+    }
+}
+
+impl<'a> Serialize for FieldValue<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let amqp_field_bytes = bincode::serialize(&self.value).unwrap();
+        let mut fv = serializer.serialize_struct(
+            "FieldValue",
+            mem::size_of_val(&self.id) + amqp_field_bytes.len(),
+        )?;
+
+        fv.serialize_field("id", &self.id)?;
+
+        write_field_bytes(&mut fv, "value", &amqp_field_bytes);
+
+        fv.end()
     }
 }

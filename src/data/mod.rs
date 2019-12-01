@@ -101,19 +101,25 @@ enum AmqpField<'a> {
 
 type FieldName<'a> = ShortString<'a>;
 
-struct FieldValue<'a>(char, AmqpField<'a>);
+struct FieldValue<'a> {
+    id: char,
+    value: AmqpField<'a>,
+}
 
+#[derive(Serialize)]
 struct Field<'a> {
     name: FieldName<'a>,
     value: FieldValue<'a>,
 }
 
+#[derive(Serialize)]
 struct FieldTable<'a> {
     size: LongUInt,
-    fields: Vec<Field<'a>>
+    fields: Vec<Field<'a>>,
 }
 
+#[derive(Serialize)]
 struct FieldArray<'a> {
     size: LongUInt,
-    values: Vec<FieldValue<'a>>
+    values: Vec<FieldValue<'a>>,
 }

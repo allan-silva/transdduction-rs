@@ -143,7 +143,7 @@ fn test_long_string_serialization_fail() {
 }
 
 #[test]
-fn test_amqp_field() {
+fn test_amqp_field_serialization() {
     let v = vec![
         AmqpField::Bit(u8::max_value()),
         AmqpField::Octect(u8::max_value()),
@@ -153,4 +153,24 @@ fn test_amqp_field() {
         AmqpField::LongString(LongString::new(7, "moz://a").unwrap()),
         AmqpField::Timestamp(u64::max_value()),
     ];
+    let serialized_vec = bincode::serialize(&v).unwrap();
+
+    let ser_size = mem::size_of::<usize>() //vec len marker
+        + mem::size_of::<u8>() // AmqpField::Bit size
+        + mem::size_of::<u8>() // AmqpField::Octect size
+        + mem::size_of::<u16>() // AmqpField::ShortUInt size
+        + mem::size_of::<u32>() // AmqpField::LongUInt size
+        + (mem::size_of::<u8>() + 7) // AmqpField::ShortString size
+        + (mem::size_of::<u32>() + 7) // AmqpField::LongString size
+        + mem::size_of::<u64>(); // AmqpField::Timestamp size
+
+    assert_len(&serialized_vec, ser_size);
 }
+
+fn test_field_value_serialization() {}
+
+fn test_field_serialization() {}
+
+fn test_field_table_serialization() {}
+
+fn test_field_array_serialization() {}

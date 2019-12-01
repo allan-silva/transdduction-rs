@@ -1,6 +1,6 @@
 use super::{
-    AmqpLiteral, Channel, DecimalValue, FrameProperties, LongUInt, PayloadSize, ProtocolHeader,
-    ProtocolVersion, Scale, ShortString, StringChar,
+    AmqpLiteral, Channel, DecimalValue, FrameProperties, LongString, LongUInt, PayloadSize,
+    ProtocolHeader, ProtocolVersion, Scale, ShortString,
 };
 
 impl DecimalValue {
@@ -41,6 +41,15 @@ impl<'a> ShortString<'a> {
     pub fn new(length: u8, content: &'a str) -> Result<Self, String> {
         match content.len() {
             l if l == length as usize => Ok(ShortString { length, content }),
+            _ => Err(format!("Invalid content size")),
+        }
+    }
+}
+
+impl<'a> LongString<'a> {
+    pub fn new(length: LongUInt, content: &'a str) -> Result<Self, String> {
+        match content.len() {
+            l if l == length as usize => Ok(LongString { length, content }),
             _ => Err(format!("Invalid content size")),
         }
     }

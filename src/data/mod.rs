@@ -6,6 +6,8 @@ mod tests;
 
 use serde::Serialize;
 
+static FRAME_END: u8 = 0xCE;
+
 type ShortUInt = u16;
 
 type LongUInt = u32;
@@ -30,9 +32,11 @@ type Float = f32;
 
 type Double = f64;
 
-type StringChar = str;
-
 type Channel = ShortUInt;
+
+type ClassId = u16;
+
+type MethodId = u16;
 
 type Scale = u8;
 
@@ -63,5 +67,53 @@ struct ProtocolHeader {
 #[derive(Debug)]
 struct ShortString<'a> {
     length: u8,
-    content: &'a StringChar
+    content: &'a str,
+}
+
+#[derive(Debug)]
+struct LongString<'a> {
+    length: LongUInt,
+    content: &'a str,
+}
+
+enum AmqpField<'a> {
+    Bit(u8),
+    Octect(u8),
+    ShortUInt(ShortUInt),
+    LongUInt(LongUInt),
+    LongLongUInt(LongLongUInt),
+    ShortString(ShortString<'a>),
+    LongString(LongString<'a>),
+    Timestamp(Timestamp),
+    FieldTable(FieldTable<'a>),
+
+    Boolean(Boolean),
+    ShortShortInt(ShortShortInt),
+    ShortShortUInt(ShortShortUInt),
+    ShortInt(ShortInt),
+    LongInt(LongInt),
+    LongLongInt(LongLongInt),
+    Float(Float),
+    Double(Double),
+    DecimalValue(DecimalValue),
+    FieldArray(FieldArray<'a>),
+}
+
+type FieldName<'a> = ShortString<'a>;
+
+struct FieldValue<'a>(char, AmqpField<'a>);
+
+struct Field<'a> {
+    name: FieldName<'a>,
+    value: FieldValue<'a>,
+}
+
+struct FieldTable<'a> {
+    size: LongUInt,
+    fields: Vec<Field<'a>>
+}
+
+struct FieldArray<'a> {
+    size: LongUInt,
+    values: Vec<FieldValue<'a>>
 }

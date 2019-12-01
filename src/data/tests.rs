@@ -3,8 +3,8 @@ use bincode;
 use std::mem;
 
 use super::{
-    Channel, DecimalValue, FrameProperties, LongUInt, PayloadSize, ProtocolHeader, Scale,
-    ShortString, StringChar,
+    AmqpField, Channel, DecimalValue, FrameProperties, LongString, LongUInt, PayloadSize,
+    ProtocolHeader, Scale, ShortString,
 };
 
 fn assert_len<T>(v: &Vec<T>, size: usize) {
@@ -88,7 +88,7 @@ fn test_decimal_value_serialization() {
 
 #[test]
 fn test_short_string_serialization() {
-    let s = "Li";
+    let s = "Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Univers";
     let short_str = ShortString::new(s.len() as u8, &s).unwrap();
     let serialized_short_string = bincode::serialize(&short_str).unwrap();
 
@@ -109,4 +109,48 @@ fn test_short_string_serialization_fail() {
         ShortString::new(s.len() as u8, &s).unwrap_err(),
         "Invalid content size"
     );
+}
+
+#[test]
+fn test_long_string_serialization() {
+    let s = "Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe";
+    let long_string = LongString::new(s.len() as LongUInt, &s).unwrap();
+    let serialized_long_string = bincode::serialize(&long_string).unwrap();
+    let length_field_mem_size = mem::size_of::<LongUInt>();
+    let mem_size = length_field_mem_size + long_string.content.len();
+
+    assert_len(&serialized_long_string, mem_size);
+
+    let length_bytes = get_byte_array::<LongUInt>(long_string.length as usize);
+    assert_vec_data(
+        &length_bytes,
+        &serialized_long_string[..length_field_mem_size],
+    );
+
+    assert_vec_data(
+        long_string.content.as_bytes(),
+        &serialized_long_string[length_field_mem_size..],
+    );
+}
+
+#[test]
+fn test_long_string_serialization_fail() {
+    let s = "Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe and Everything Life, the Universe";
+    assert_eq!(
+        LongString::new(1 + s.len() as LongUInt, &s).unwrap_err(),
+        "Invalid content size"
+    );
+}
+
+#[test]
+fn test_amqp_field() {
+    let v = vec![
+        AmqpField::Bit(u8::max_value()),
+        AmqpField::Octect(u8::max_value()),
+        AmqpField::ShortUInt(u16::max_value()),
+        AmqpField::LongUInt(u32::max_value()),
+        AmqpField::ShortString(ShortString::new(7, "moz://a").unwrap()),
+        AmqpField::LongString(LongString::new(7, "moz://a").unwrap()),
+        AmqpField::Timestamp(u64::max_value()),
+    ];
 }

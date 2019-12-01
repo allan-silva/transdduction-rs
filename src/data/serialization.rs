@@ -1,10 +1,10 @@
-use std::io::Write;
+use std::mem;
 
 use serde;
-use serde::ser::{SerializeSeq, SerializeStruct};
+use serde::ser::SerializeStruct;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use super::{DecimalValue, FrameProperties, ProtocolHeader, ShortString};
+use super::{DecimalValue, FrameProperties, LongString, LongUInt, ProtocolHeader, ShortString};
 
 impl Serialize for ProtocolHeader {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -43,21 +43,38 @@ impl Serialize for DecimalValue {
     }
 }
 
-
 impl<'a> Serialize for ShortString<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let content_bytes = self.content.as_bytes();
-        let mut ss = serializer.serialize_struct("ShortString", 1 + content_bytes.len())?;
-        
+        let mut ss = serializer.serialize_struct(
+            "ShortString",
+            mem::size_of_val(&self.length) + self.length as usize,
+        )?;
         ss.serialize_field("length", &self.length)?;
-        
-        for b in content_bytes {
+        for b in self.content.as_bytes() {
             ss.serialize_field("content", &b)?;
         }
 
         ss.end()
+    }
+}
+
+impl<'a> Serialize for LongString<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut ls = serializer.serialize_struct(
+            "LongString",
+            mem::size_of_val(&self.length) + self.length as usize,
+        )?;
+        ls.serialize_field("length", &self.length)?;
+        for b in self.content.as_bytes() {
+            ls.serialize_field("content", &b)?;
+        }
+
+        ls.end()
     }
 }

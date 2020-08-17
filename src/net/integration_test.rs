@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use bincode::{serialize, deserialize};
-
 use crate::configuration::Config;
 use super::ConnectionManager;
 use crate::data::ProtocolHeader;

@@ -38,25 +38,30 @@ fn send_protocol_header() {
     let config = box ConfigMock::new();
     let connection_manager = ConnectionManager::new(config);
 
-    let protocol_header = serialize(&ProtocolHeader::default()).unwrap();
+    let protocol_header = Vec::from(ProtocolHeader::default());
 
     let server_response = connection_manager.send(protocol_header).unwrap();
+
+    panic!("TODO: Receive Start Method");
 }
 
 #[test]
 fn send_wrong_protocol_header() {
     let config = box ConfigMock::new();
     let connection_manager = ConnectionManager::new(config);
-    let protocol_header = ProtocolHeader {
-        amqp_litetal: String::from("ZMQP"),
-        ..Default::default()
-    };
-    let protocol_header = serialize(&protocol_header).unwrap();
+
+    let protocol_header = Vec::from(
+        ProtocolHeader {
+            amqp_literal: String::from("ZMQP"),
+            ..Default::default()
+        }
+    );
 
     let server_response = connection_manager.send(protocol_header).unwrap();
 
-    let supported_protocol: ProtocolHeader = deserialize(&server_response).unwrap();
+    let supported_protocol: ProtocolHeader = ProtocolHeader::from(server_response);
 
+    assert_eq!(String::from("AMQP"), supported_protocol.amqp_literal);
     assert_eq!(0u8, supported_protocol.id);
     assert_eq!(0u8, supported_protocol.major);
     assert_eq!(9u8, supported_protocol.minor);
